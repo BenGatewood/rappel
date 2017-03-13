@@ -1,28 +1,32 @@
 library(ggplot2)
 
-`%between%` <- function(x,rng) x>rng[1] & x<rng[2]
-
-stepsDay <- group_by(steps, day = floor_date(startDate, "day"))
-
-distanceDay <- group_by(distance, day = floor_date(startDate, "day"))
-
-combinedDay <- bind_rows(stepsDay, distanceDay)
-
-combinedDaySum <- summarise(group_by(combinedDay, day, type), sum(value))
 
 bind_rows(steps, distance) %>%
-        filter(isoweek(startDate) == 9 & year(startDate) == 2017) %>%
+        filter(isoweek(startDate) == 10 & year(startDate) == 2017) %>%
         arrange(startDate) -> lastWeek
 
-g <- ggplot(lastWeek, aes(startDate, value, col = type)) +
-        geom_point()
+today <- "2017/03/12"
 
-glommed <- data.frame(startDate = lastWeek$startDate,
-                      steps = filter(lastWeek, type == "steps")$value,
-                      distance = filter(lastWeek, type == "distance")$value)
+todayData <- filter(lastWeek, date(startDate) == ymd(today))
+todaySteps <- filter(todayData, type == "steps")
+todayDistance <- filter(todayData, type == "distance")
 
+grouped <- group_by(lastWeek, date(startDate), type)
+
+groupedSum <- summarise(grouped, sum(value))
+
+g <- ggplot(todayData, aes(startDate, value, col = type)) +
+        geom_point(alpha = 0.75) +
+        labs(x = "Start Time", y = "Value (Distance in Metres)") +
+        scale_color_brewer(palette = "Dark2")
+
+t <- ggplot(groupedSum, 
+            aes(`date(startDate)`, `sum(value)`)) +
+        geom_bar(stat = "identity") + 
+        facet_grid(type ~ .) +
+        geom_rug()
 
 print(t)
 
-
+#ggsave("./20170312.png")
 
